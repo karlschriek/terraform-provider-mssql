@@ -41,7 +41,7 @@ func testAccPreCheck(t *testing.T) {
   _, azure := os.LookupEnv("TF_ACC")
   _, local := os.LookupEnv("TF_ACC_LOCAL")
   if local || azure {
-    keys = append(keys, "MSSQL_USERNAME", "MSSQL_PASSWORD")
+    keys = append(keys, "MSSQL_USERNAME", "MSSQL_PASSWORD", "MSSQL_HOST")
   }
   if azure {
     keys = append(keys, "MSSQL_TENANT_ID", "MSSQL_CLIENT_ID", "MSSQL_CLIENT_SECRET", "TF_ACC_SQL_SERVER", "TF_ACC_AZURE_USER_CLIENT_ID", "TF_ACC_AZURE_USER_CLIENT_SECRET")

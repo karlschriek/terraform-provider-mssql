@@ -24,17 +24,14 @@ func GetFactory() model.ConnectorFactory {
 }
 
 func (f factory) GetConnector(prefix string, data *schema.ResourceData) (interface{}, error) {
-  if len(prefix) > 0 {
-    prefix = prefix + ".0."
-  }
 
   connector := &Connector{
-    Host:    data.Get(prefix + "host").(string),
-    Port:    data.Get(prefix + "port").(string),
+    Host:    data.Get("host").(string),
+    Port:    data.Get("port").(string),
     Timeout: data.Timeout(schema.TimeoutRead),
   }
 
-  if admin, ok := data.GetOk(prefix + "login.0"); ok {
+  if admin, ok := data.GetOk("login.0"); ok {
     admin := admin.(map[string]interface{})
     connector.Login = &LoginUser{
       Username: admin["username"].(string),
@@ -42,7 +39,7 @@ func (f factory) GetConnector(prefix string, data *schema.ResourceData) (interfa
     }
   }
 
-  if admin, ok := data.GetOk(prefix + "azure_login.0"); ok {
+  if admin, ok := data.GetOk("azure_login.0"); ok {
     admin := admin.(map[string]interface{})
     connector.AzureLogin = &AzureLogin{
       TenantID:     admin["tenant_id"].(string),

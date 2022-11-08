@@ -6,80 +6,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const DefaultPort = "1433"
 
-func getServerSchema(prefix string) map[string]*schema.Schema {
-	if len(prefix) > 0 {
-		prefix = prefix + ".0."
-	}
-	return map[string]*schema.Schema{
-		"host": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return strings.EqualFold(old, new)
-			},
-		},
-		"port": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-			Default:  DefaultPort,
-		},
-		"login": {
-			Type:         schema.TypeList,
-			MaxItems:     1,
-			Optional:     true,
-			ExactlyOneOf: []string{prefix + "login", prefix + "azure_login"},
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"username": {
-						Type:        schema.TypeString,
-						Required:    true,
-						DefaultFunc: schema.EnvDefaultFunc("MSSQL_USERNAME", nil),
-					},
-					"password": {
-						Type:        schema.TypeString,
-						Required:    true,
-						Sensitive:   true,
-						DefaultFunc: schema.EnvDefaultFunc("MSSQL_PASSWORD", nil),
-					},
-				},
-			},
-		},
-		"azure_login": {
-			Type:         schema.TypeList,
-			MaxItems:     1,
-			Optional:     true,
-			ExactlyOneOf: []string{prefix + "login", prefix + "azure_login"},
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"tenant_id": {
-						Type:        schema.TypeString,
-						Required:    true,
-						DefaultFunc: schema.EnvDefaultFunc("MSSQL_TENANT_ID", nil),
-					},
-					"client_id": {
-						Type:        schema.TypeString,
-						Required:    true,
-						DefaultFunc: schema.EnvDefaultFunc("MSSQL_CLIENT_ID", nil),
-					},
-					"client_secret": {
-						Type:        schema.TypeString,
-						Required:    true,
-						Sensitive:   true,
-						DefaultFunc: schema.EnvDefaultFunc("MSSQL_CLIENT_SECRET", nil),
-					},
-				},
-			},
-		},
-	}
-}
 
 func serverFromId(id string) ([]map[string]interface{}, *url.URL, error) {
 	u, err := url.Parse(id)

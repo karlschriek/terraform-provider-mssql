@@ -3,6 +3,7 @@ package mssql
 import (
 	"context"
 	"strings"
+	"net/url"
 
 	"github.com/betr-io/terraform-provider-mssql/mssql/model"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -20,14 +21,6 @@ func resourceUser() *schema.Resource {
 			StateContext: resourceUserImport,
 		},
 		Schema: map[string]*schema.Schema{
-			serverProp: {
-				Type:     schema.TypeList,
-				MaxItems: 1,
-				Required: true,
-				Elem: &schema.Resource{
-					Schema: getServerSchema(serverProp),
-				},
-			},
 			databaseProp: {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -101,8 +94,13 @@ type UserConnector interface {
 }
 
 func resourceUserCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
+	providerData := meta.(model.Provider).GetProviderData()
+	host := providerData.Get("server.0.host").(string)
+	port := providerData.Get("server.0.port").(string)
+
 	logger := loggerFromMeta(meta, "user", "create")
-	logger.Debug().Msgf("Create %s", getUserID(data))
+	logger.Debug().Msgf("Create %s", getUserID(host, port, data))
 
 	database := data.Get(databaseProp).(string)
 	username := data.Get(usernameProp).(string)
@@ -147,7 +145,7 @@ func resourceUserCreate(ctx context.Context, data *schema.ResourceData, meta int
 		return diag.FromErr(errors.Wrapf(err, "unable to create user [%s].[%s]", database, username))
 	}
 
-	data.SetId(getUserID(data))
+	data.SetId(getUserID(host, port, data))
 
 	logger.Info().Msgf("created user [%s].[%s]", database, username)
 
@@ -204,6 +202,10 @@ func resourceUserUpdate(ctx context.Context, data *schema.ResourceData, meta int
 	logger := loggerFromMeta(meta, "user", "update")
 	logger.Debug().Msgf("Update %s", data.Id())
 
+	providerData := meta.(model.Provider).GetProviderData()
+	host := providerData.Get("server.0.host").(string)
+	port := providerData.Get("server.0.port").(string)
+
 	database := data.Get(databaseProp).(string)
 	username := data.Get(usernameProp).(string)
 	defaultSchema := data.Get(defaultSchemaProp).(string)
@@ -225,7 +227,7 @@ func resourceUserUpdate(ctx context.Context, data *schema.ResourceData, meta int
 		return diag.FromErr(errors.Wrapf(err, "unable to update user [%s].[%s]", database, username))
 	}
 
-	data.SetId(getUserID(data))
+	data.SetId(getUserID(host, port, data))
 
 	logger.Info().Msgf("updated user [%s].[%s]", database, username)
 
@@ -260,11 +262,12 @@ func resourceUserImport(ctx context.Context, data *schema.ResourceData, meta int
 	logger := loggerFromMeta(meta, "user", "import")
 	logger.Debug().Msgf("Import %s", data.Id())
 
-	server, u, err := serverFromId(data.Id())
+	providerData := meta.(model.Provider).GetProviderData()
+	host := providerData.Get("server.0.host").(string)
+	port := providerData.Get("server.0.port").(string)
+
+	u, err := url.Parse(data.Id())
 	if err != nil {
-		return nil, err
-	}
-	if err = data.Set(serverProp, server); err != nil {
 		return nil, err
 	}
 
@@ -279,7 +282,7 @@ func resourceUserImport(ctx context.Context, data *schema.ResourceData, meta int
 		return nil, err
 	}
 
-	data.SetId(getUserID(data))
+	data.SetId(getUserID(host, port, data))
 
 	database := data.Get(databaseProp).(string)
 	username := data.Get(usernameProp).(string)
@@ -319,7 +322,7 @@ func resourceUserImport(ctx context.Context, data *schema.ResourceData, meta int
 
 func getUserConnector(meta interface{}, data *schema.ResourceData) (UserConnector, error) {
 	provider := meta.(model.Provider)
-	connector, err := provider.GetConnector(serverProp, data)
+	connector, err := provider.GetConnector(serverProp)
 	if err != nil {
 		return nil, err
 	}

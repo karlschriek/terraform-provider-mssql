@@ -28,13 +28,6 @@ func TestAccUser_Local_Instance(t *testing.T) {
           resource.TestCheckResourceAttr("mssql_user.instance", "default_language", ""),
           resource.TestCheckResourceAttr("mssql_user.instance", "roles.#", "1"),
           resource.TestCheckResourceAttr("mssql_user.instance", "roles.0", "db_owner"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.host", "localhost"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.port", "1433"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.login.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.login.0.username", os.Getenv("MSSQL_USERNAME")),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.login.0.password", os.Getenv("MSSQL_PASSWORD")),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.azure_login.#", "0"),
           resource.TestCheckResourceAttrSet("mssql_user.instance", "principal_id"),
           resource.TestCheckNoResourceAttr("mssql_user.instance", "password"),
         ),
@@ -62,14 +55,6 @@ func TestAccUser_Azure_Instance(t *testing.T) {
           resource.TestCheckResourceAttr("mssql_user.instance", "default_language", ""),
           resource.TestCheckResourceAttr("mssql_user.instance", "roles.#", "1"),
           resource.TestCheckResourceAttr("mssql_user.instance", "roles.0", "db_owner"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.host", os.Getenv("TF_ACC_SQL_SERVER")),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.port", "1433"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.azure_login.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.azure_login.0.tenant_id", os.Getenv("MSSQL_TENANT_ID")),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.azure_login.0.client_id", os.Getenv("MSSQL_CLIENT_ID")),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.azure_login.0.client_secret", os.Getenv("MSSQL_CLIENT_SECRET")),
-          resource.TestCheckResourceAttr("mssql_user.instance", "server.0.login.#", "0"),
           resource.TestCheckResourceAttrSet("mssql_user.instance", "principal_id"),
           resource.TestCheckNoResourceAttr("mssql_user.instance", "password"),
         ),
@@ -98,14 +83,6 @@ func TestAccUser_Azure_Database(t *testing.T) {
           resource.TestCheckResourceAttr("mssql_user.database", "default_language", ""),
           resource.TestCheckResourceAttr("mssql_user.database", "roles.#", "1"),
           resource.TestCheckResourceAttr("mssql_user.database", "roles.0", "db_owner"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.host", os.Getenv("TF_ACC_SQL_SERVER")),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.port", "1433"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.0.tenant_id", os.Getenv("MSSQL_TENANT_ID")),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.0.client_id", os.Getenv("MSSQL_CLIENT_ID")),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.0.client_secret", os.Getenv("MSSQL_CLIENT_SECRET")),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.login.#", "0"),
           resource.TestCheckResourceAttrSet("mssql_user.database", "principal_id"),
         ),
       },
@@ -136,14 +113,6 @@ func TestAccUser_Azure_External(t *testing.T) {
           resource.TestCheckResourceAttr("mssql_user.database", "default_language", ""),
           resource.TestCheckResourceAttr("mssql_user.database", "roles.#", "1"),
           resource.TestCheckResourceAttr("mssql_user.database", "roles.0", "db_owner"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.host", os.Getenv("TF_ACC_SQL_SERVER")),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.port", "1433"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.#", "1"),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.0.tenant_id", tenantId),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.0.client_id", os.Getenv("MSSQL_CLIENT_ID")),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.azure_login.0.client_secret", os.Getenv("MSSQL_CLIENT_SECRET")),
-          resource.TestCheckResourceAttr("mssql_user.database", "server.0.login.#", "0"),
           resource.TestCheckResourceAttrSet("mssql_user.database", "principal_id"),
           resource.TestCheckNoResourceAttr("mssql_user.database", "password"),
         ),
@@ -336,19 +305,11 @@ func TestAccUser_Azure_Update_Roles(t *testing.T) {
 func testAccCheckUser(t *testing.T, name string, azure bool, data map[string]interface{}) string {
   text := `{{ if .login_name }}
            resource "mssql_login" "{{ .name }}" {
-             server {
-               host = "{{ .host }}"
-               {{ if .azure }}azure_login {}{{ else }}login {}{{ end }}
-             }
              login_name = "{{ .login_name }}"
              password   = "{{ .login_password }}"
            }
            {{ end }}
            resource "mssql_user" "{{ .name }}" {
-             server {
-               host = "{{ .host }}"
-               {{ if .azure }}azure_login {}{{ else }}login {}{{ end }}
-             }
              {{ with .database }}database = "{{ . }}"{{ end }}
              username = "{{ .username }}"
              {{ with .password }}password = "{{ . }}"{{ end }}
@@ -358,12 +319,6 @@ func testAccCheckUser(t *testing.T, name string, azure bool, data map[string]int
              {{ with .roles }}roles = {{ . }}{{ end }}
            }`
   data["name"] = name
-  data["azure"] = azure
-  if azure {
-    data["host"] = os.Getenv("TF_ACC_SQL_SERVER")
-  } else {
-    data["host"] = "localhost"
-  }
   res, err := templateToString(name, text, data)
   if err != nil {
     t.Fatalf("%s", err)
