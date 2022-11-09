@@ -96,8 +96,8 @@ type UserConnector interface {
 func resourceUserCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
 	providerData := meta.(model.Provider).GetProviderData()
-	host := providerData.Get("server.0.host").(string)
-	port := providerData.Get("server.0.port").(string)
+	host := providerData.Get("host").(string)
+	port := providerData.Get("port").(string)
 
 	logger := loggerFromMeta(meta, "user", "create")
 	logger.Debug().Msgf("Create %s", getUserID(host, port, data))
@@ -203,8 +203,8 @@ func resourceUserUpdate(ctx context.Context, data *schema.ResourceData, meta int
 	logger.Debug().Msgf("Update %s", data.Id())
 
 	providerData := meta.(model.Provider).GetProviderData()
-	host := providerData.Get("server.0.host").(string)
-	port := providerData.Get("server.0.port").(string)
+	host := providerData.Get("host").(string)
+	port := providerData.Get("port").(string)
 
 	database := data.Get(databaseProp).(string)
 	username := data.Get(usernameProp).(string)
@@ -263,8 +263,8 @@ func resourceUserImport(ctx context.Context, data *schema.ResourceData, meta int
 	logger.Debug().Msgf("Import %s", data.Id())
 
 	providerData := meta.(model.Provider).GetProviderData()
-	host := providerData.Get("server.0.host").(string)
-	port := providerData.Get("server.0.port").(string)
+	host := providerData.Get("host").(string)
+	port := providerData.Get("port").(string)
 
 	u, err := url.Parse(data.Id())
 	if err != nil {
