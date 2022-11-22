@@ -259,6 +259,25 @@ func (c *Connector) UpdateUser(ctx context.Context, database string, user *model
 
 func (c *Connector) DeleteUser(ctx context.Context, database, username string) error {
   cmd := `DECLARE @stmt nvarchar(max)
+          DECLARE @userPrincipalId int = 
+          (
+              SELECT [principal_id]
+              FROM sys.database_principals
+              WHERE [name] = @username
+          )
+          
+          DECLARE @crsr CURSOR
+          SET @crsr = CURSOR FOR SELECT [name] from sys.schemas WHERE principal_id = @userPrincipalId
+          DECLARE @schemaName VARCHAR(MAX)
+          
+          OPEN @crsr
+          FETCH NEXT FROM @crsr INTO @schemaName
+          WHILE @@FETCH_STATUS = 0
+          BEGIN
+              EXEC('ALTER AUTHORIZATION ON schema::[' + @schemaName + '] TO [dbo]')
+              FETCH NEXT FROM @crsr INTO @schemaName
+          END
+
           SET @stmt = 'IF EXISTS (SELECT 1 FROM ' + QuoteName(@database) + '.[sys].[database_principals] WHERE [name] = ' + QuoteName(@username, '''') + ') ' +
                       'DROP USER ' + QuoteName(@username)
           EXEC (@stmt)`
