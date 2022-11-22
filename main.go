@@ -16,3 +16,4 @@ func main() {
     ProviderFunc: mssql.New(version, commit),
   })
 }
+
